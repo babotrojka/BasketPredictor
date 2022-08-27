@@ -14,21 +14,26 @@ OUT_ROOT = Path("../out/")
 TENSORBOARD_LOG = Path("../logs/fit", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
 
-def make_dataset_split(split_root: Path) -> tf.data.Dataset:
+def make_dataset_split(split_root: Path, dataset_config: dict) -> tf.data.Dataset:
     dataset = load_dataset(split_root)
-    dataset = prepare_dataset(dataset, batch_size=8)
+    dataset = prepare_dataset(dataset, batch_size=dataset_config["batch_size"])
     return dataset
 
 
-def make_dataset(dataset_root: Path) -> dict[str, tf.data.Dataset]:
+def make_dataset(
+    dataset_root: Path, dataset_config: dict
+) -> dict[str, tf.data.Dataset]:
     return {
-        split: make_dataset_split(dataset_root / split)
+        split: make_dataset_split(dataset_root / split, dataset_config)
         for split in ["train", "val", "test"]
     }
 
 
 def main():
-    dataset = make_dataset(DATASET_ROOT)
+    dataset_config = {
+        "batch_size": 8,
+    }
+    dataset = make_dataset(DATASET_ROOT, dataset_config)
 
     model = build_model()
     print(model.summary())
@@ -45,10 +50,13 @@ def main():
         ],
     )
 
+    train_config = {
+        "epochs": 50,
+    }
     model.fit(
         dataset["train"],
-        epochs=50,
         validation_data=dataset["val"],
+        epochs=train_config["epochs"],
         callbacks=[
             tf.keras.callbacks.TensorBoard(
                 TENSORBOARD_LOG,

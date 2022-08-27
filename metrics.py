@@ -1,12 +1,16 @@
 import tensorflow as tf
 
+# pylint: disable=unused-argument
+
 
 class IOU(tf.keras.metrics.Metric):
     def __init__(self, name: str = "iou", **kwargs: dict) -> None:
         super().__init__(name=name, **kwargs)
         self.iou = self.add_weight(name="iou", initializer="zeros")
 
-    def update_state(self, y_true: tf.Tensor, y_pred: tf.Tensor, _: tf.Tensor) -> None:
+    def update_state(
+        self, y_true: tf.Tensor, y_pred: tf.Tensor, sample_weight: tf.Tensor
+    ) -> None:
         y_pred = tf.clip_by_value(y_pred, 0, 1)
 
         x_a = tf.math.maximum(y_true[:, 0], y_pred[:, 0])

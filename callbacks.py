@@ -77,10 +77,9 @@ class ReportImages(tf.keras.callbacks.Callback):
 
 
 class TensorboardReportImages(tf.keras.callbacks.Callback):
-    def __init__(self, logdir: Path, data: tf.data.Dataset, max_outputs=16) -> None:
+    def __init__(self, logdir: Path, data: tf.data.Dataset) -> None:
         self.file_writer = tf.summary.create_file_writer(str(logdir))
         self.data = data
-        self.max_outputs = max_outputs
 
     def on_epoch_end(self, epoch: int, _: Any) -> None:
         for x_b, y_b in self.data.as_numpy_iterator():
@@ -91,7 +90,7 @@ class TensorboardReportImages(tf.keras.callbacks.Callback):
             images = []
             for j in range(batch_len):
                 fig = create_fig_with_bbox_patches(
-                    image=x_b["image"][j].numpy().astype(np.uint16),
+                    image=x_b["image"][j].astype(np.uint16),
                     bbox_true=y_b["bbox"][j],
                     bbox_pred=y_hat[j],
                 )
@@ -106,6 +105,6 @@ class TensorboardReportImages(tf.keras.callbacks.Callback):
                 tf.summary.image(
                     "Training data",
                     np.array(images),
-                    max_outputs=self.max_outputs,
+                    max_outputs=batch_len,
                     step=epoch,
                 )
