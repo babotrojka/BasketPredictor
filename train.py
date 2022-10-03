@@ -31,8 +31,18 @@ def make_dataset(
 
 def main():
     dataset_config = {
-        "batch_size": 8,
+        "batch_size": 16,
     }
+
+    train_config = {
+        "epochs": 100,
+        "learning_rate": 1e-4,
+        "fine_tuning": {
+            "epochs": 30,
+            "learning_rate": 1e-5,
+        },
+    }
+
     dataset = make_dataset(DATASET_ROOT, dataset_config)
 
     model = build_model()
@@ -40,7 +50,11 @@ def main():
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(
-            learning_rate=1e-3,
+            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
+                initial_learning_rate=train_config["learning_rate"],
+                decay_steps=1e4,
+                decay_rate=0.96,
+            )
         ),
         loss={
             "bbox": "mse",
@@ -50,9 +64,6 @@ def main():
         ],
     )
 
-    train_config = {
-        "epochs": 50,
-    }
     model.fit(
         dataset["train"],
         validation_data=dataset["val"],
@@ -63,8 +74,52 @@ def main():
             ),
             TensorboardReportImages(
                 TENSORBOARD_LOG,
-                dataset["val"],
+                dataset["val"].take(1),
             ),
+        ],
+    )
+
+    # fine tuning
+    model.layers[0].trainable = True
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
+                initial_learning_rate=train_config["fine_tuning"]["learning_rate"],
+                decay_steps=1e4,
+                decay_rate=0.96,
+            )
+        ),
+        loss={
+            "bbox": "mse",
+        },
+        metrics=[
+            IOU(),
+        ],
+    )
+
+    model.fit(
+        dataset["train"],
+        validation_data=dataset["val"],
+        epochs=train_config["epochs"],
+        callbacks=[
+            tf.keras.callbacks.TensorBoard(
+                Path(f"{str(TENSORBOARD_LOG)}_ft"),
+            ),
+            TensorboardReportImages(
+                Path(f"{str(TENSORBOARD_LOG)}_ft"),
+                dataset["val"].take(1),
+            ),
+        ],
+    )
+
+    model.evaluate(
+        dataset["test"],
+        batch_size=64,
+        callbacks=[
+            TensorboardReportImages(
+                TENSORBOARD_LOG,
+                dataset["test"],
+            )
         ],
     )
 
