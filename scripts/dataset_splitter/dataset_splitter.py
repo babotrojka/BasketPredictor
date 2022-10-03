@@ -7,7 +7,7 @@ import numpy as np
 valid_extensions = [".jpg", ".png"]
 
 
-def extract_images_and_json(folder: Path) -> np.ndarray:
+def extract_images_and_json_from_snimci(folder: Path) -> np.ndarray:
     x_all = []
     for snimak in folder.iterdir():
         for img in snimak.iterdir():
@@ -17,6 +17,19 @@ def extract_images_and_json(folder: Path) -> np.ndarray:
                     f"{img.stem}.json",
                 )
                 x_all.append((img, json_file))
+
+    return np.array(x_all)
+
+
+def extract_images_and_json_from_folder(folder: Path) -> np.ndarray:
+    x_all = []
+    for img in folder.iterdir():
+        if img.suffix in valid_extensions:
+            json_file = Path(
+                folder,
+                f"{img.stem}.json",
+            )
+            x_all.append((img, json_file))
 
     return np.array(x_all)
 
@@ -43,7 +56,7 @@ def split(args) -> None:
     folder = Path(args.folder)
     dest_root = Path(args.dest)
 
-    x_all = extract_images_and_json(folder)
+    x_all = extract_images_and_json_from_folder(folder)
 
     trains = np.random.choice(
         len(x_all), size=int(splits["train"] * len(x_all)), replace=False

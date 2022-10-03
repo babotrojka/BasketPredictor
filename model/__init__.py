@@ -2,49 +2,29 @@ import tensorflow as tf
 
 
 def build_model() -> tf.keras.Model:
+    backbone = tf.keras.applications.efficientnet_v2.EfficientNetV2B0(
+        include_top=False,
+    )
+    backbone.trainable = False
+
     model = tf.keras.Sequential(
         [
             tf.keras.layers.Input(shape=(224, 224, 3), name="image"),
-            tf.keras.layers.Conv2D(
-                filters=16,
-                kernel_size=5,
-                strides=1,
-                padding="same",
-                activation="relu",
-            ),
-            tf.keras.layers.MaxPool2D(
-                pool_size=4,
-            ),
-            tf.keras.layers.Conv2D(
-                filters=32,
-                kernel_size=3,
-                strides=2,
-                padding="valid",
-                activation="relu",
-            ),
-            tf.keras.layers.MaxPool2D(
-                pool_size=2,
-            ),
-            tf.keras.layers.Conv2D(
-                filters=64,
-                kernel_size=3,
-                strides=1,
-                padding="valid",
-                activation="relu",
-            ),
-            tf.keras.layers.Flatten(),
+            backbone,
+            tf.keras.layers.GlobalAveragePooling2D(),
             tf.keras.layers.Dense(
-                units=128,
-                activation="relu",
+                units=512,
+                activation="swish",
+            ),
+            tf.keras.layers.Dense(
+                units=256,
+                activation="swish",
             ),
             tf.keras.layers.Dense(
                 units=64,
-                activation="relu",
+                activation="swish",
             ),
-            tf.keras.layers.Dense(
-                units=4,
-                name="bbox",
-            ),
+            tf.keras.layers.Dense(units=4, activation="sigmoid", name="bbox"),
         ]
     )
 
