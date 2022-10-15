@@ -22,7 +22,7 @@ def figure_to_numpy(fig: Figure) -> np.ndarray:
 
 
 def create_patch_from_bbox(
-    image_shape: tuple, bbox: tf.Tensor, color: Union[str, tuple], linewidth: int = 1
+    image_shape: tuple, bbox: np.ndarray, color: Union[str, tuple], linewidth: int = 1
 ) -> patches.Rectangle:
     image_width, image_height, _ = image_shape
     y = bbox[0] * image_width

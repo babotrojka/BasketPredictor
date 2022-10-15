@@ -40,7 +40,7 @@ def load_dataset(dataset_root: Path) -> tf.data.Dataset:
 
 
 def prepare_dataset(dataset: tf.data.Dataset, batch_size: int) -> tf.data.Dataset:
-    dataset.shuffle(tf.data.experimental.cardinality(dataset))
+    dataset.shuffle(dataset.cardinality().numpy())
 
     # read images
     dataset = dataset.map(
