@@ -31,16 +31,12 @@ def make_dataset(
 
 def main():
     dataset_config = {
-        "batch_size": 16,
+        "batch_size": 32,
     }
 
     train_config = {
-        "epochs": 100,
-        "learning_rate": 1e-4,
-        "fine_tuning": {
-            "epochs": 30,
-            "learning_rate": 1e-5,
-        },
+        "epochs": 300,
+        "learning_rate": 1e-3,
     }
 
     dataset = make_dataset(DATASET_ROOT, dataset_config)
@@ -52,8 +48,8 @@ def main():
         optimizer=tf.keras.optimizers.Adam(
             learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
                 initial_learning_rate=train_config["learning_rate"],
-                decay_steps=1e4,
-                decay_rate=0.96,
+                decay_steps=5600,
+                decay_rate=0.1,
             )
         ),
         loss={
@@ -74,39 +70,6 @@ def main():
             ),
             TensorboardReportImages(
                 TENSORBOARD_LOG,
-                dataset["val"].take(1),
-            ),
-        ],
-    )
-
-    # fine tuning
-    model.layers[0].trainable = True
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(
-            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=train_config["fine_tuning"]["learning_rate"],
-                decay_steps=1e4,
-                decay_rate=0.96,
-            )
-        ),
-        loss={
-            "bbox": "mse",
-        },
-        metrics=[
-            IOU(),
-        ],
-    )
-
-    model.fit(
-        dataset["train"],
-        validation_data=dataset["val"],
-        epochs=train_config["epochs"],
-        callbacks=[
-            tf.keras.callbacks.TensorBoard(
-                Path(f"{str(TENSORBOARD_LOG)}_ft"),
-            ),
-            TensorboardReportImages(
-                Path(f"{str(TENSORBOARD_LOG)}_ft"),
                 dataset["val"].take(1),
             ),
         ],
@@ -122,6 +85,8 @@ def main():
             )
         ],
     )
+
+    tf.keras.models.save_model(model, str(OUT_ROOT / "saved_models" / "model"))
 
 
 if __name__ == "__main__":

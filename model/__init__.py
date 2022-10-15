@@ -2,30 +2,29 @@ import tensorflow as tf
 
 
 def build_model() -> tf.keras.Model:
-    backbone = tf.keras.applications.efficientnet_v2.EfficientNetV2B0(
+    inputs = (tf.keras.layers.Input(shape=(224, 224, 3), name="image"),)
+
+    backbone = tf.keras.applications.convnext.ConvNeXtTiny(
         include_top=False,
-    )
-    backbone.trainable = False
+    )(inputs)
+    backbone.trainable = True
 
-    model = tf.keras.Sequential(
-        [
-            tf.keras.layers.Input(shape=(224, 224, 3), name="image"),
-            backbone,
-            tf.keras.layers.GlobalAveragePooling2D(),
-            tf.keras.layers.Dense(
-                units=512,
-                activation="swish",
-            ),
-            tf.keras.layers.Dense(
-                units=256,
-                activation="swish",
-            ),
-            tf.keras.layers.Dense(
-                units=64,
-                activation="swish",
-            ),
-            tf.keras.layers.Dense(units=4, activation="sigmoid", name="bbox"),
-        ]
-    )
+    out = (tf.keras.layers.GlobalAveragePooling2D()(backbone),)
 
-    return model
+    out = tf.keras.layers.Dense(
+        units=512,
+        activation="swish",
+    )(out[0])
+    out = tf.keras.layers.Dropout(0.3)(out)
+    out = tf.keras.layers.Dense(
+        units=256,
+        activation="swish",
+    )(out)
+    out = tf.keras.layers.Dropout(0.3)(out)
+    out = tf.keras.layers.Dense(
+        units=64,
+        activation="swish",
+    )(out)
+    out = tf.keras.layers.Dense(units=4, activation="sigmoid", name="bbox")(out)
+
+    return tf.keras.Model(inputs=inputs, outputs=out)
