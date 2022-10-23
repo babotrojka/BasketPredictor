@@ -64,7 +64,10 @@ def prepare_dataset(dataset: tf.data.Dataset, batch_size: int) -> tf.data.Datase
             },
         )
     )
-    dataset = dataset.batch(batch_size)
+
+    if batch_size:
+        dataset = dataset.batch(batch_size)
+
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
     return dataset
