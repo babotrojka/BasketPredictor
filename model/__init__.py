@@ -9,12 +9,12 @@ def build_model() -> tf.keras.Model:
     )(inputs)
     backbone.trainable = True
 
-    out = (tf.keras.layers.GlobalAveragePooling2D()(backbone),)
+    out = tf.keras.layers.GlobalAveragePooling2D()(backbone)
 
     out = tf.keras.layers.Dense(
         units=512,
         activation="swish",
-    )(out[0])
+    )(out)
     out = tf.keras.layers.Dropout(0.3)(out)
     out = tf.keras.layers.Dense(
         units=256,
