@@ -2,6 +2,8 @@ import datetime
 from pathlib import Path
 
 import tensorflow as tf
+from hyperas import optim
+from hyperopt import tpe, Trials
 from hyperopt.pyll.stochastic import lognormal
 from keras.optimizers import Adam, RMSprop
 from callbacks import TensorboardReportImages
@@ -9,8 +11,6 @@ from metrics import IOU
 from train import make_dataset, make_dataset_split
 
 from hyperas.distributions import choice, quniform, normal
-
-
 
 OUT_ROOT = Path("../out/")
 TENSORBOARD_LOG = Path("../logs/fit", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -55,16 +55,14 @@ def build_model(dataset: dict) -> dict:
 
     optimizer = optimizer(
         learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=lr,
-                decay_steps={{normal(5600, 1400)}},
-                decay_rate={{lognormal(0.1, 0.2)}},
+            initial_learning_rate=lr,
+            decay_steps={{normal(5600, 1400)}},
+            decay_rate={{lognormal(0.1, 0.2)}},
         )
     )
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(
-
-        ),
+        optimizer=optimizer,
         loss={
             "bbox": "mse",
         },
@@ -85,30 +83,36 @@ def build_model(dataset: dict) -> dict:
                 patience=100,
                 min_delta=0.01,
             )
-        ]
+        ],
+        verbose=0,
     )
 
     results = model.evaluate(
         dataset["test"],
         batch_size=64,
+        verbose=0,
     )
+
+    test_iou = results[1]
+
+    return {
+        "loss": -test_iou,
+        "status": "ok",
+        "model": model,
+    }
 
 
 def main():
-    dataset_config = {
-        "batch_size": {{choice([16, 32, 64])}},
-    }
+    best_pms, best_model = optim.minimize(
+        model=build_model,
+        data=data,
+        algo=tpe.suggest,
+        max_evals=20,
+        trials=Trials(),
+    )
 
-    train_config = {
-        "epochs": 300,
-        "learning_rate": 1e-3,
-    }
-
-
-
-
-
-    tf.keras.models.save_model(model, str(OUT_ROOT / "saved_models" / "model"))
+    print(f"Best pms: {best_pms}")
+    tf.keras.models.save_model(best_model, str(OUT_ROOT / "saved_models" / "model"))
 
 
 if __name__ == "__main__":
