@@ -8,7 +8,7 @@ An app which solves problem of object localization of a ball on videos of me sho
 ### Details and results
 Problem is solved using deep neural net 
 with a backbone [ConvNeXt](https://arxiv.org/abs/2201.03545) on which was added a couple of dense layers as Head with the sigmoid as final activation.
-The output od model are 4 number representing `x1`, `x2`, `y1` and `y2` coordinates. Backbone was not pretrained, weights were randomly initialized 
+The output od model are 4 number representing `x1`, `y1`, `x2` and `y2` coordinates. Backbone was not pretrained, weights were randomly initialized 
 coming from normal distribution. Training was done on one GPU and lasted around 1-2 hours. Dataset was annotated by me.
 
 My goal was to also implement hyperas and autokeras libraries in my model to perform NAS and some HPO, but I did not succeed in that. Those libraries 
